@@ -40,10 +40,12 @@ set(INCLUDE_DIRS "../aiservice")
 ```cpp
 MG_ARCH=3 MG_TLS=MG_TLS_MBED
 ```
+## 协议文档
+docs/速启智能硬件协议规范_v1.0.0.pdf
 
 ## 参数获取
 
-aiservice/main/aiservice/type.h中使用到的以下宏参数，需要联系获取
+sqtech-ai-iot/src/aiservice/type.h中使用到的以下宏参数用于测试
 
 ```C++
 APP_LICENSE_ID
