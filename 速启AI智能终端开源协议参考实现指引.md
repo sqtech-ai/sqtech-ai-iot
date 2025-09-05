@@ -1,4 +1,4 @@
-# 速启AI智能设备开源协议参考实现
+# 速启AI智能终端开源协议参考实现
 
 1.在程序初始化成功后，建立mqtt对象：
 
@@ -41,7 +41,7 @@ set(INCLUDE_DIRS "../aiservice")
 MG_ARCH=3 MG_TLS=MG_TLS_MBED
 ```
 ## 协议文档
-docs/速启智能硬件协议规范_v1.0.0.pdf
+docs/速启智能终端协议规范_v1.0.0.pdf
 
 ## 参数获取
 
