@@ -42,6 +42,37 @@ int sendToService(WssMqttv5 *mqtt, const char *text)
   {
     return -1;
   }
+  
+  cJSON_AddNumberToObject(params, "pageSize", 10);
+  cJSON_AddNumberToObject(params, "position", 1);
+
+  bool listen_music = false;
+  if (!listen_music)
+  {
+    cJSON_AddStringToObject(params, "intent", "listen_audiobook");
+  }
+  else
+  {
+    auto musicOption = cJSON_CreateObject();
+    if (!musicOption)
+    {
+      cJSON_Delete(params);
+      return -2;
+    }
+
+    cJSON_AddStringToObject(musicOption, "artistName", "黄绮珊");
+    cJSON_AddStringToObject(musicOption, "songName", "向云端");
+    cJSON_AddStringToObject(musicOption, "language", "国语");
+    cJSON_AddStringToObject(musicOption, "albumName", "");
+    cJSON_AddStringToObject(musicOption, "artistSex", "女");
+    cJSON_AddBoolToObject(musicOption, "isOriginal", true);
+    cJSON_AddStringToObject(musicOption, "area", "中国");
+    cJSON_AddStringToObject(musicOption, "tag", "KTV");
+
+    cJSON_AddItemToObject(params, "musicOption", musicOption);
+  }
+  cJSON_AddStringToObject(params, "content", text);
+  cJSON_AddBoolToObject(params, "isRecommend", true);
 
   std::vector<std::string> request_resultType = {"extendParam"};
   if (std::string(SERVICE_PACKAGE_CODE) == "0")

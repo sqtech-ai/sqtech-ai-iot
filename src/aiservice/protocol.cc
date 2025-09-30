@@ -9,6 +9,8 @@
 
 static const char *TAG = "Protocol";
 
+static bool online = false; // 在线响应成功
+
 std::string makeConnectInfo(const char *appLicenseId, const char *regionCode, const char *sign,
                             const char *appTime, const char *deviceId, const char *serverToken)
 {
@@ -49,6 +51,11 @@ std::string makeRequest(const char *deviceId, const char *request_id, const char
                         const std::vector<std::string> &request_resultType, const std::vector<std::string> &request_agentIndexArray,
                         const cJSON *request_params)
 {
+  if (!online)
+  {
+    return "";
+  }
+
   // 参数校验
   if (deviceId == nullptr || request_id == nullptr ||
       request_text == nullptr || request_resultType.empty())
@@ -203,11 +210,14 @@ int getResponse(const char *result, int &code, std::string &message, std::string
         cJSON_free(json_str);
       }
     }
-    else
+
+    if (!online)
     {
-      ESP_LOGE(TAG, "Failed to parse extendParam");
-      cJSON_Delete(root);
-      return 0;
+      cJSON *action_item = cJSON_GetObjectItem(data, "action");
+      if (action_item != nullptr && strcmp("onlineResponse", action_item->valuestring) == 0 && code == 1000)
+      {
+        online = true;
+      }
     }
   }
   else
