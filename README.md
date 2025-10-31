@@ -36,6 +36,8 @@
 详细内容套餐介绍网页：
 https://suqi.tech/#/music
 
+## 速启智能终端协议规范
+[速启智能终端协议规范文档](https://github.com/sqtech-ai/sqtech-ai-iot/tree/main/docs/速启智能终端协议规范_v1.0.2.md)
 ## 联系方式
 <a href="docs/企业微信截图.png" target="_blank" title="企业微信">
     <img src="docs/企业微信截图.png" width="240" />
