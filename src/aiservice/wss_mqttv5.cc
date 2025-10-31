@@ -33,31 +33,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data)
     // WS connection established. Perform MQTT login
     ESP_LOGI(TAG, "Connected to WS. Logging in to MQTT...");
     // 设置MQTT 5.0连接属性
-    char timestamp[20] = {0};
-    get_timestamp_ms_str(timestamp, sizeof(timestamp));
     std::string deviceid = get_device_id();
-    uint8_t digest[32];  // SHA256 输出为 32 字节
-    char hex_digest[65]; // 十六进制字符串（64字符 + '\0'）
-    std::string data = std::string(timestamp) + APP_LICENSE_ID + get_device_id() + SERVICE_PACKAGE_CODE + APP_KEY;
-    // std::cout << "Data for HMAC-SHA256: " << data << std::endl;
-    // 计算 HMAC-SHA256
-    int ret = hmac_sha256(
-        (const uint8_t *)APP_KEY, strlen(APP_KEY),
-        (const uint8_t *)data.c_str(), strlen(data.c_str()),
-        digest);
-    bin2hex(digest, sizeof(digest), hex_digest);
-    ESP_LOGI(TAG, "HMAC-SHA256: %s", hex_digest);
-    struct mg_mqtt_prop props[] = {
-        // 用户自定义属性
-        {MQTT_PROP_USER_PROPERTY, 0, mg_str("REGION_CODE"), mg_str(REGION_CODE)},
-        {MQTT_PROP_USER_PROPERTY, 0, mg_str("APP_LICENSE_ID"), mg_str(APP_LICENSE_ID)},
-        {MQTT_PROP_USER_PROPERTY, 0, mg_str("APP_TIME"), mg_str(timestamp)},
-        {MQTT_PROP_USER_PROPERTY, 0, mg_str("DEVICE_ID"), mg_str(deviceid.c_str())},
-        {MQTT_PROP_USER_PROPERTY, 0, mg_str("SERVICE_PACKAGE_CODE"), mg_str(SERVICE_PACKAGE_CODE)},
-        {MQTT_PROP_USER_PROPERTY, 0, mg_str("SERVER_TOKEN"), mg_str(SERVER_TOKEN)},
-        {MQTT_PROP_USER_PROPERTY, 0, mg_str("SIGN"), mg_str(hex_digest)},
-    };
-    // 配置MQTT连接选项
     struct mg_mqtt_opts opts = {0};
     opts.user = mg_str(MQTT_USERNAME);
     opts.pass = mg_str(MQTT_PASSWORD);
@@ -65,8 +41,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data)
     opts.keepalive = 0;
     opts.clean = true;
     opts.version = 5;   // 使用MQTT 5.0协议
-    opts.props = props; // 添加属性
-    opts.num_props = sizeof(props) / sizeof(props[0]);
+    opts.num_props = 0;
     size_t len = c->send.len;
     mg_mqtt_login(c, &opts);
     mg_ws_wrap(c, c->send.len - len, WEBSOCKET_OP_BINARY);
@@ -83,6 +58,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data)
       switch (mm.cmd)
       {
       case MQTT_CMD_CONNACK:
+      {
         mg_call(c, MG_EV_MQTT_OPEN, &mm.ack);
         if (mm.ack != 0)
         {
@@ -92,7 +68,31 @@ static void fn(struct mg_connection *c, int ev, void *ev_data)
 
         mq5->Subscribe(get_sucribe_topic(), 1);
 
-        break;
+        char timestamp[20] = {0};
+        get_timestamp_ms_str(timestamp, sizeof(timestamp));
+        uint8_t digest[32];  // SHA256 输出为 32 字节
+        char hex_digest[65]; // 十六进制字符串（64字符 + '\0'）
+        std::string data = std::string(timestamp) + APP_LICENSE_ID + get_device_id() + SERVICE_PACKAGE_CODE + APP_KEY;
+        std::cout << "Data for HMAC-SHA256: " << data << std::endl;
+        // 计算 HMAC-SHA256
+        int ret = hmac_sha256(
+            (const uint8_t *)APP_KEY, strlen(APP_KEY),
+            (const uint8_t *)data.c_str(), strlen(data.c_str()),
+            digest);
+        if (ret == 0)
+        {
+          bin2hex(digest, sizeof(digest), hex_digest);
+          printf("HMAC-SHA256: %s\n", hex_digest);
+        }
+        else
+        {
+          printf("Error: %d\n", ret);
+          return;
+        }
+        // 连接mqtt后 发布connect消息
+        mq5->Publish(get_connect_topic(), makeConnectInfo(APP_LICENSE_ID, REGION_CODE, hex_digest, timestamp, get_device_id().c_str(), SERVER_TOKEN), 1);
+      }
+      break;
       case MQTT_CMD_PUBLISH:
       {
         mq5->OnPublish(mm.topic.buf, mm.data.buf);
